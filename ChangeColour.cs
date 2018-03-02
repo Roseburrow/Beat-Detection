@@ -15,9 +15,9 @@ public class ChangeColour : MonoBehaviour {
 	// Update is called once per frame
 	void Update () 
 	{
-		if (!BeatDetection.beat)
+		if (BeatDetection.beat)
         {
-            m_BeatColour = Color.yellow;
+            m_BeatColour = Color.green;
             m_Material.SetColor("_EmissionColor", m_BeatColour);
         }
         else

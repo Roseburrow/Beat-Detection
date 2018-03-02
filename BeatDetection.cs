@@ -11,7 +11,8 @@ public class BeatDetection : MonoBehaviour
     private float[] m_samplesLeft;
     private float[] m_samplesRight;
 
-    public float sensitivity;
+    public float m_Sensitivity;
+    public float m_EnergyVariance;
 
     //The amount of samples being taken each update frame.
     public int samplesTaken;
@@ -20,8 +21,9 @@ public class BeatDetection : MonoBehaviour
     private float[] localHistory;
 
     //TESTING
-    public float m_instantEnergy;
-    public float m_averageLocalEnergy;
+    public float m_InstantEnergy;
+    public float m_AverageLocalEnergy;
+    public float averagemodifiedEnergy;
 
     private bool wasLastBeat;
     public static bool beat;
@@ -41,12 +43,19 @@ public class BeatDetection : MonoBehaviour
     void Update()
     {
         GetSpectrumData();
-        m_instantEnergy = CalculateInstantEnergy(); //Calculate the instant energy based on 1024 samples.
-        m_averageLocalEnergy = CalculateAverageLocalEnergy(); //Calculate the local average energy based on 43 instant energy readings.
-        localHistory = ShiftHistory(); //Shift the history buffer up one to make room for new values.
-        localHistory[0] = m_instantEnergy; //Add the instant energy average to the history.
+        m_InstantEnergy = CalculateInstantEnergy(); //Calculate the instant energy based on 1024 samples.
+        m_AverageLocalEnergy = CalculateAverageLocalEnergy(); //Calculate the local average energy based on 43 instant energy readings.
+        m_EnergyVariance = CalculateEnergyVariance();
+        m_Sensitivity = CalculateSensitivity();
 
-        if (m_instantEnergy > m_averageLocalEnergy * sensitivity)
+        localHistory = ShiftHistory(); //Shift the history buffer up one to make room for new values.
+        localHistory[0] = m_InstantEnergy; //Add the instant energy average to the history.
+
+        //This is only used for testing.
+        averagemodifiedEnergy = m_AverageLocalEnergy * m_Sensitivity;
+
+        //Pit this into a method?
+        if (m_InstantEnergy > m_AverageLocalEnergy * m_Sensitivity)
         {
             beat = true;
         }
@@ -63,25 +72,39 @@ public class BeatDetection : MonoBehaviour
     float CalculateInstantEnergy()
     {
         float instantEnergy = 0f;
-
         for (int i = 0; i < samplesTaken; i++)
         {
             instantEnergy += (float)Math.Pow(m_samplesLeft[i], 2) + (float)Math.Pow(m_samplesRight[i], 2);
         }
-
         return instantEnergy;
     }
 
     float CalculateAverageLocalEnergy()
     {
         float averageLocalEnergy = 0f;
-
         for (int i = 0; i < localHistory.Length; i++)
         {
             averageLocalEnergy += (float)Math.Pow(localHistory[i], 2) / 43;
         }
-
         return averageLocalEnergy;
+    }
+
+    float CalculateEnergyVariance()
+    {
+        float variance = 0f;
+
+        for (int i = 0; i < localHistory.Length; i++)
+        {
+            variance += (float)Math.Pow(localHistory[i] - m_AverageLocalEnergy, 2);
+        }
+        return variance / localHistory.Length;
+    }
+
+    float CalculateSensitivity()
+    {
+        float S = 0f;
+        S = (0.0025714f * m_EnergyVariance) + 1.5142857f;
+        return S;
     }
 
     /// <summary>
@@ -109,7 +132,7 @@ public class BeatDetection : MonoBehaviour
     /// <returns>true if a beat is detected, false otherwise</returns>
     public bool IsBeat()
     {
-        if (m_instantEnergy > m_averageLocalEnergy * sensitivity)
+        if (m_InstantEnergy > m_AverageLocalEnergy * m_Sensitivity)
         {
             if (!wasLastBeat)
             {
