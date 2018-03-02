@@ -2,8 +2,8 @@
 
 public class ChangeColour : MonoBehaviour {
 
-    Color m_BeatColour;
     Material m_Material;
+    Color m_BeatColour;
     public float smoothnessChange;
 
 	// Use this for initialization
@@ -15,7 +15,7 @@ public class ChangeColour : MonoBehaviour {
 	// Update is called once per frame
 	void Update () 
 	{
-		if (BeatDetection.beat)
+		if (BeatDetection.m_Beat)
         {
             m_BeatColour = Color.green;
             m_Material.SetColor("_EmissionColor", m_BeatColour);

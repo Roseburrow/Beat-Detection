@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 
+[RequireComponent(typeof(AudioSource))]
 public class BeatDetection : MonoBehaviour
 {
     //The audisource playing
@@ -11,39 +12,39 @@ public class BeatDetection : MonoBehaviour
     private float[] m_samplesLeft;
     private float[] m_samplesRight;
 
-    public float m_Sensitivity;
-    public float m_EnergyVariance;
-
-    //The amount of samples being taken each update frame.
-    public int samplesTaken;
-
     //The last average energy readings. Size will be 44032 / samplesTaken as this is the closest you can get to 1 second of audio.
     private float[] localHistory;
 
-    //TESTING
+    //Determines what change in amplitude dictates a beat. Variance is used in this calculation.
+    public float m_Sensitivity;
+    public float m_EnergyVariance;
+
+    //Values required for detecting if there is a beat or not.
+    //Don't need to be public.
     public float m_InstantEnergy;
     public float m_AverageLocalEnergy;
     public float averagemodifiedEnergy;
 
-    private bool wasLastBeat;
-    public static bool beat;
+    //The amount of samples being taken each update frame.
+    public int samplesTaken;     
 
-    // Use this for initialization
+    //True if a beat is detected, false otherwise.
+    public static bool m_Beat;
+
     void Start()
     {
         m_AudioSource = GetComponent<AudioSource>();
         m_samplesLeft = new float[samplesTaken];
         m_samplesRight = new float[samplesTaken];
         localHistory = new float[43]; //Dictated by 44032 / 1024 for 1 second of audio.
-        wasLastBeat = false;
-        beat = false;
+        m_Beat = false;
     }
 
     // Update is called once per frame
     void Update()
     {
-        GetSpectrumData();
-        m_InstantEnergy = CalculateInstantEnergy(); //Calculate the instant energy based on 1024 samples.
+        GetSpectrumData(); //Populate sample arrays.
+        m_InstantEnergy = CalculateInstantEnergy(); //Calculate the instant energy based on sample arrays.
         m_AverageLocalEnergy = CalculateAverageLocalEnergy(); //Calculate the local average energy based on 43 instant energy readings.
         m_EnergyVariance = CalculateEnergyVariance();
         m_Sensitivity = CalculateSensitivity();
@@ -54,12 +55,7 @@ public class BeatDetection : MonoBehaviour
         //This is only used for testing.
         averagemodifiedEnergy = m_AverageLocalEnergy * m_Sensitivity;
 
-        //Pit this into a method?
-        if (m_InstantEnergy > m_AverageLocalEnergy * m_Sensitivity)
-        {
-            beat = true;
-        }
-        else { beat = false; }
+        m_Beat = IsBeat();
     }
 
     void GetSpectrumData()
@@ -103,7 +99,7 @@ public class BeatDetection : MonoBehaviour
     float CalculateSensitivity()
     {
         float S = 0f;
-        S = (0.0025714f * m_EnergyVariance) + 1.5142857f;
+        S = (0.0025714f * m_EnergyVariance) + 1.5142857f; //Experiment with these numbers.
         return S;
     }
 
@@ -134,14 +130,8 @@ public class BeatDetection : MonoBehaviour
     {
         if (m_InstantEnergy > m_AverageLocalEnergy * m_Sensitivity)
         {
-            if (!wasLastBeat)
-            {
-                UnityEngine.Debug.Log("BEAT DETECTED!");
-                wasLastBeat = true;              
-            }
-            return true;              
+            return true;
         }
-        wasLastBeat = false;
-        return false;
+        else { return false; }
     }
 }
