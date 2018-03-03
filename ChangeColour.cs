@@ -2,8 +2,8 @@
 
 public class ChangeColour : MonoBehaviour {
 
-    Material m_Material;
     Color m_BeatColour;
+    Material m_Material;
     public float smoothnessChange;
 
 	// Use this for initialization
@@ -17,7 +17,7 @@ public class ChangeColour : MonoBehaviour {
 	{
 		if (BeatDetection.m_Beat)
         {
-            m_BeatColour = Color.green;
+            m_BeatColour = Color.magenta;
             m_Material.SetColor("_EmissionColor", m_BeatColour);
         }
         else
